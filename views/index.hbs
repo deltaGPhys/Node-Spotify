@@ -1,0 +1,112 @@
+<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.3/jquery-ui.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.5/js/bootstrap.min.js"></script>
+<div class = "jumbotron">
+    <div class = "container">
+        <h1>Node and Spotify and Express and Handlebar and JQuery, Oh My!</h1>
+        <p>Demo using Node.js to access the Spotify API</p>
+    </div>
+</div>
+
+
+
+<div class="container" style="text-align:center; padding:20px; width:600px; border: 1px solid black;">
+    <div style="float:left; text-align:center;">
+        <div style="text-align:center;">
+            <form action="/artist" method="post" role="form" enctype="application/x-www-form-urlencoded">
+                <legend>Search Spotify</legend>
+
+                <div class="form-group">
+                    <label for="param_query">Artist Name</label>
+                    <input id="artistInput" type="text" class="form-control" name="param_query" id="param_query" placeholder="">
+                </div>
+            </form>
+            <div id="trackName"></div>
+            <div><iframe id="player" width="300" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe></div>
+        </div>
+    </div>
+    <div id="Artist" style="float:right; text-align:center; margin-bottom:20px; width:248px;">
+        <div id="topArtist"></div>
+        <div id="albumArt" style="visibility:hidden;">
+            <img src="" border="1" style=" width:248px;">
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready (function() {
+        var baseUrl = "http://localhost:3000";
+
+        $("#ArtistModal").modal('show');
+        var csrftoken = jQuery("[name=csrfmiddlewaretoken]").val();
+        function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+
+
+        $("#artistInput").keyup(debounce(function() {
+            var inputVal = $(this).val();
+            var artists = [];
+            $("#trackName").html("");
+            $('#albumArt').find('img').attr('src',"");
+
+            $.ajax({ // check the partial name
+                data: {'partial':inputVal},
+                type: 'POST',
+                url: baseUrl + '/namecheck',
+                dataType: 'json',
+            }).then(function(response){ //deal with response: artist, art, track
+                topArtist = response['topArtist'];
+                albumArt = response['albumArt'];
+                topTrackID = response['topTrackID'];
+                topTrack = response['topTrack'];
+                $('#player').attr("src","");
+                if (topArtist) {
+                    $('#topArtist').html("<h2>"+topArtist+"</h2>");
+                    if (albumArt) {
+                        $('#albumArt').find('img').attr('src',(albumArt));
+                        $('#albumArt').css('visibility','');
+                        console.log($('#albumArt').attr('visibility'));
+                    } else {
+                        $('#albumArt').find('img').attr('src',"");
+                        $('#albumArt').css('visibility','hidden');
+                    }
+                    if (topTrack) {
+                        $("#trackName").html("<h5>"+topTrack+"</h5>");
+                        $('#player').attr("src","https://open.spotify.com/embed/track/"+topTrackID);
+                    }
+
+                } else {
+                    $('#albumArt').find('img').attr('src',"");
+                    $('#topArtist').html("");
+                }
+            });
+        },150));
+    });
+
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function() {
+            var context = this, args = arguments;
+            var later = function() {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+</script>
