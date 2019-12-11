@@ -24,9 +24,14 @@
                     <input id="artistInput" type="text" class="form-control" name="param_query" id="param_query" placeholder="">
                 </div>
             </form>
-            <div id="trackName"></div>
+            <div id="trackName" style="max-width:300px;"></div>
             <div><iframe id="player" width="300" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe></div>
         </div>
+        <form action="/tracks" method="post" role="form" enctype="application/x-www-form-urlencoded">
+            <input type="hidden" name="artist" id="topTrackData" value="">
+            <input type="hidden" name="artistName" id="topTrackName" value="">
+            <button type="submit" id="topTrackButton" class="btn btn-primary" style="margin:20px; visibility:hidden">Get Top Tracks</button>
+        </form>
     </div>
     <div id="Artist" style="float:right; text-align:center; margin-bottom:20px; width:248px;">
         <div id="topArtist"></div>
@@ -68,6 +73,8 @@
                 dataType: 'json',
             }).then(function(response){ //deal with response: artist, art, track
                 topArtist = response['topArtist'];
+                artistId = response['artistId'];
+
                 albumArt = response['albumArt'];
                 topTrackID = response['topTrackID'];
                 topTrack = response['topTrack'];
@@ -77,7 +84,7 @@
                     if (albumArt) {
                         $('#albumArt').find('img').attr('src',(albumArt));
                         $('#albumArt').css('visibility','');
-                        console.log($('#albumArt').attr('visibility'));
+
                     } else {
                         $('#albumArt').find('img').attr('src',"");
                         $('#albumArt').css('visibility','hidden');
@@ -85,6 +92,9 @@
                     if (topTrack) {
                         $("#trackName").html("<h5>"+topTrack+"</h5>");
                         $('#player').attr("src","https://open.spotify.com/embed/track/"+topTrackID);
+                        $('#topTrackData').val(artistId);
+                        $('#topTrackName').val(topArtist);
+                        $('#topTrackButton').css('visibility','');
                     }
 
                 } else {
@@ -92,7 +102,7 @@
                     $('#topArtist').html("");
                 }
             });
-        },150));
+        },200));
     });
 
     function debounce(func, wait, immediate) {
